@@ -11,7 +11,7 @@
       },
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://CHANGE-ME-TO-YOUR-DEPLOYED-BACKEND.example.com"
+        "EXPO_PUBLIC_BACKEND_URL": "https://178-128-158-148.sslip.io:8443/newhuman"
       }
     },
     "production": {
@@ -19,7 +19,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://CHANGE-ME-TO-YOUR-DEPLOYED-BACKEND.example.com"
+        "EXPO_PUBLIC_BACKEND_URL": "https://178-128-158-148.sslip.io:8443/newhuman"
       }
     }
   },

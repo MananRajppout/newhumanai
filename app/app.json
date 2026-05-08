@@ -43,7 +43,7 @@
       ]
     ],
     "extra": {
-      "BACKEND_URL": "https://CHANGE-ME.example.com"
+      "BACKEND_URL": "https://178-128-158-148.sslip.io:8443/newhuman"
     }
   }
 }
