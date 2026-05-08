@@ -169,9 +169,41 @@ function SessionUI({ trigger, onEnd }) {
   const [agentJoined, setAgentJoined] = useState(false);
   const [debug, setDebug] = useState('');
 
-  // CRITICAL: subscribe to BOTH the user's mic AND the agent's audio.
-  // Without this, you can't hear the agent.
+  // Watch ALL audio tracks (local + remote). The hook auto-attaches remote audio
+  // tracks to native audio output, which is what makes you hear the agent.
   const tracks = useTracks([Track.Source.Microphone], { onlySubscribed: false });
+
+  // Once the room is connected, EXPLICITLY enable the local microphone.
+  // The `audio={true}` prop on <LiveKitRoom> is supposed to do this automatically,
+  // but on some Android devices it silently fails. Calling it explicitly fixes that.
+  useEffect(() => {
+    if (!room || !localParticipant) return;
+    let cancelled = false;
+
+    const enableMic = async () => {
+      try {
+        if (room.state !== 'connected') return;
+        // Force-publish microphone
+        await localParticipant.setMicrophoneEnabled(true);
+        if (cancelled) return;
+        console.log('[client] mic enabled, tracks:', localParticipant.audioTrackPublications.size);
+      } catch (e) {
+        console.warn('[client] setMicrophoneEnabled failed:', e?.message);
+      }
+    };
+
+    if (room.state === 'connected') {
+      enableMic();
+    } else {
+      const onConnected = () => enableMic();
+      room.on(RoomEvent.Connected, onConnected);
+      return () => {
+        cancelled = true;
+        room.off(RoomEvent.Connected, onConnected);
+      };
+    }
+    return () => { cancelled = true; };
+  }, [room, localParticipant]);
 
   useEffect(() => {
     if (!room) return;
@@ -180,7 +212,9 @@ function SessionUI({ trigger, onEnd }) {
       const remotes = Array.from(room.remoteParticipants.values());
       const agentHere = remotes.length > 0;
       setAgentJoined(agentHere);
-      setDebug(`local:${localParticipant?.identity || '?'} remotes:${remotes.length} state:${room.state}`);
+      const localAudioCount = localParticipant?.audioTrackPublications?.size || 0;
+      const remoteAudioCount = remotes.reduce((sum, p) => sum + (p.audioTrackPublications?.size || 0), 0);
+      setDebug(`mic:${localAudioCount} remote:${remoteAudioCount} state:${room.state}`);
     };
 
     const onActiveSpeakers = (speakers) => {

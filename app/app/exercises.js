@@ -144,8 +144,19 @@ export default function ExercisesScreen() {
 // Animation primitives — one component per exercise type
 // ============================================================================
 
+function normalizeType(t) {
+  const s = String(t || '').toLowerCase().replace(/_/g, '-').trim();
+  if (s.includes('breath')) return 'breathing-circle';
+  if (s.includes('count')) return 'count-down';
+  if (s.includes('reveal') || s.includes('text') || s.includes('ground')) return 'text-reveal';
+  if (s.includes('pulse') || s.includes('heart')) return 'pulse';
+  if (s.includes('scan') || s.includes('body')) return 'body-scan';
+  return 'breathing-circle'; // safe fallback
+}
+
 function ExerciseAnimation({ ex }) {
-  switch (ex.type) {
+  const t = normalizeType(ex.type);
+  switch (t) {
     case 'breathing-circle': return <BreathingCircle params={ex.params || {}} />;
     case 'count-down': return <CountDown params={ex.params || {}} />;
     case 'text-reveal': return <TextReveal params={ex.params || {}} />;
