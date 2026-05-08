@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "newhuman.ai",
+    "slug": "newhuman-ai",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "newhuman",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "splash": {
+      "backgroundColor": "#000000",
+      "resizeMode": "contain"
+    },
+    "android": {
+      "package": "ai.newhuman.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.INTERNET"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#000000"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "@livekit/react-native-expo-plugin",
+        {}
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 34
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "BACKEND_URL": "https://CHANGE-ME.example.com"
+    }
+  }
+}

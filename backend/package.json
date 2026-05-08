@@ -1,0 +1,31 @@
+{
+  "name": "newhuman-backend",
+  "version": "0.1.0",
+  "description": "newhuman.ai POC backend - LiveKit agent + token server + Postgres",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "agent:dev": "node src/agent.js dev",
+    "agent:start": "node src/agent.js start",
+    "init-db": "node src/init-db.js",
+    "smoketest": "node src/smoketest.js"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "cors": "^2.8.5",
+    "livekit-server-sdk": "^2.15.2",
+    "@livekit/agents": "^1.4.0",
+    "@livekit/agents-plugin-openai": "^1.4.0",
+    "@livekit/agents-plugin-deepgram": "^1.4.0",
+    "@livekit/agents-plugin-silero": "^1.4.0",
+    "@livekit/rtc-node": "^0.13.3",
+    "openai": "^4.73.0",
+    "pg": "^8.13.1",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
