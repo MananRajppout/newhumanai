@@ -101,8 +101,18 @@ export default defineAgent({
       room: ctx.room,
     });
 
-    // Kick off — agent speaks first based on its instructions
-    session.generateReply();
+    console.log('[agent] session started, generating opening reply');
+
+    // Kick off — agent speaks first. Pass an explicit instruction so it doesn't
+    // wait for the user to say something first.
+    try {
+      await session.generateReply({
+        instructions: `Greet the person warmly. In ONE short sentence, acknowledge that they pressed the button about ${sessionCtx.trigger || 'this'}${sessionCtx.context ? ` and what they said: "${sessionCtx.context}"` : ''}. Then immediately begin the somatic intervention without asking for more input. Speak naturally, like a voice note.`,
+      });
+      console.log('[agent] opening reply triggered');
+    } catch (err) {
+      console.error('[agent] generateReply error:', err);
+    }
   },
 });
 

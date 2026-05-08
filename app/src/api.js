@@ -63,6 +63,13 @@ export const api = {
     });
   },
 
+  async getExercises({ user_id, trigger, context }) {
+    return req('/api/exercises', {
+      method: 'POST',
+      body: JSON.stringify({ user_id, trigger, context }),
+    });
+  },
+
   async endSession(room_name) {
     return req('/api/session/end', {
       method: 'POST',

@@ -1,22 +1,19 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Svg, { Line, Circle as SvgCircle } from 'react-native-svg';
-import TriggerNode from '../src/components/TriggerNode';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import GlowOrb from '../src/components/GlowOrb';
 import { IconFor } from '../src/components/icons';
 import { colors, type, spacing } from '../src/theme';
 import { api } from '../src/api';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-
-// Default seed triggers if onboarding didn't define any (shouldn't happen, but safe)
 const FALLBACK_TRIGGERS = ['Doomscrolling', 'Overeating', "Can't Sleep", 'Overthinking'];
 
 export default function Home() {
   const router = useRouter();
   const [triggers, setTriggers] = useState([]);
-  const [activeIdx, setActiveIdx] = useState(2); // The "Overeating" star position from the screenshot
   const [chosenCount, setChosenCount] = useState(0);
   const [userId, setUserId] = useState(null);
 
@@ -28,10 +25,10 @@ export default function Home() {
 
       let trigs = FALLBACK_TRIGGERS;
       if (onbStr) {
-        const onb = JSON.parse(onbStr);
-        if (Array.isArray(onb.triggers) && onb.triggers.length > 0) {
-          trigs = onb.triggers;
-        }
+        try {
+          const onb = JSON.parse(onbStr);
+          if (Array.isArray(onb.triggers) && onb.triggers.length > 0) trigs = onb.triggers;
+        } catch {}
       }
       setTriggers(trigs);
 
@@ -45,114 +42,113 @@ export default function Home() {
   }, []);
 
   const goToContext = (trigger) => {
+    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
     router.push({ pathname: '/context', params: { trigger } });
   };
 
   return (
-    <View style={styles.root}>
-      {/* Header */}
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+      {/* Top header */}
       <View style={styles.header}>
         <Pressable style={styles.iconBtn} hitSlop={12}>
           <View style={styles.menuLine} />
           <View style={styles.menuLine} />
           <View style={styles.menuLine} />
         </Pressable>
-        <Text style={[type.brand, styles.brandText]}>NEW HUMAN AI</Text>
+        <Text style={styles.brand}>NEW HUMAN AI</Text>
         <Pressable
           style={styles.iconBtn}
           hitSlop={12}
           onPress={() => router.push('/profile')}
         >
-          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-            <SvgCircle cx="12" cy="9" r="3.5" stroke={colors.text} strokeWidth={1.4} />
-            <Line x1="4" y1="22" x2="4" y2="22" stroke="transparent" />
-            <SvgCircle cx="12" cy="20" r="8" stroke={colors.text} strokeWidth={1.4} />
-          </Svg>
+          <View style={styles.profileDot} />
+          <View style={styles.profileArc} />
         </Pressable>
       </View>
 
-      {/* Tap your trigger */}
+      {/* Tap your trigger label */}
       <Text style={[type.label, styles.tapLabel]}>TAP YOUR TRIGGER</Text>
 
+      {/* Scrollable trigger list with timeline */}
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Vertical timeline line behind nodes */}
-        <View style={styles.timeline} pointerEvents="none">
-          <Svg width={2} height={triggers.length * 130 + 100} style={{ alignSelf: 'center' }}>
-            <Line
-              x1={1}
-              y1={0}
-              x2={1}
-              y2={triggers.length * 130 + 100}
-              stroke="rgba(157, 78, 221, 0.25)"
-              strokeWidth={1}
-            />
-          </Svg>
-        </View>
+        <View style={styles.timeline}>
+          {/* Vertical line */}
+          <View style={styles.timelineLine} pointerEvents="none" />
 
-        {/* Trigger nodes alternating left/right */}
-        {triggers.map((label, idx) => {
-          const align = idx % 2 === 0 ? 'left' : 'right';
-          const isActive = idx === activeIdx;
-          return (
-            <View key={`${label}-${idx}`} style={styles.nodeRow}>
-              {/* Connector dot on the timeline */}
-              <View style={[styles.dot, align === 'left' ? styles.dotRight : styles.dotLeft]} />
-              <TriggerNode
-                label={label}
-                icon={<IconFor trigger={label} />}
-                active={isActive}
-                align={align}
-                onPress={() => goToContext(label)}
-              />
-            </View>
-          );
-        })}
+          {triggers.map((label, idx) => {
+            const align = idx % 2 === 0 ? 'left' : 'right';
+            return (
+              <View key={`${label}-${idx}`} style={styles.nodeRow}>
+                {/* Connector dot on the line */}
+                <View style={styles.connectorDot} pointerEvents="none" />
 
-        {/* Bottom node - "you" / current self */}
-        <View style={styles.bottomNodeWrap}>
-          <View style={styles.bottomNode}>
-            <View style={styles.bottomNodeInner}>
-              {[...Array(9)].map((_, i) => {
-                const angle = (i / 9) * Math.PI * 2;
-                const r = 14;
-                return (
-                  <View
-                    key={i}
-                    style={[
-                      styles.bottomDot,
-                      {
-                        left: 28 + Math.cos(angle) * r,
-                        top: 28 + Math.sin(angle) * r,
-                      },
-                    ]}
-                  />
-                );
-              })}
-              <View style={[styles.bottomDot, { left: 28, top: 28 }]} />
-            </View>
+                <View style={[
+                  styles.nodeWrap,
+                  align === 'left' ? styles.nodeLeft : styles.nodeRight,
+                ]}>
+                  <Pressable
+                    onPress={() => goToContext(label)}
+                    hitSlop={10}
+                  >
+                    <GlowOrb size={108} intensity={0.5}>
+                      <View style={{ alignItems: 'center' }}>
+                        <View style={{ marginBottom: 4 }}>
+                          <IconFor trigger={label} />
+                        </View>
+                        <Text style={styles.orbLabel} numberOfLines={2}>
+                          {label}
+                        </Text>
+                      </View>
+                    </GlowOrb>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })}
+
+          {/* Bottom "you" node */}
+          <View style={styles.bottomNodeWrap}>
+            <GlowOrb size={66} intensity={0.7} filled>
+              <View style={styles.dotCluster}>
+                {[...Array(8)].map((_, i) => {
+                  const angle = (i / 8) * Math.PI * 2;
+                  const r = 12;
+                  return (
+                    <View
+                      key={i}
+                      style={[
+                        styles.smallDot,
+                        {
+                          left: 18 + Math.cos(angle) * r,
+                          top: 18 + Math.sin(angle) * r,
+                        },
+                      ]}
+                    />
+                  );
+                })}
+                <View style={[styles.smallDot, { left: 18, top: 18 }]} />
+              </View>
+            </GlowOrb>
+          </View>
+
+          {/* Counter */}
+          <View style={styles.counter}>
+            <Text style={styles.counterLabel}>You have chosen yourself</Text>
+            <Text style={styles.counterNum}>{chosenCount}</Text>
+            <Text style={styles.counterLabel}>times this month.</Text>
           </View>
         </View>
-
-        {/* Chosen-yourself counter */}
-        <View style={styles.counter}>
-          <Text style={[type.bodyMuted, { textAlign: 'center' }]}>
-            You have chosen yourself
-          </Text>
-          <Text style={styles.counterNum}>{chosenCount}</Text>
-          <Text style={[type.bodyMuted, { textAlign: 'center' }]}>
-            times this month.
-          </Text>
-        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg, paddingTop: 50 },
+  root: { flex: 1, backgroundColor: colors.bg },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -163,84 +159,129 @@ const styles = StyleSheet.create({
   iconBtn: {
     width: 28,
     height: 28,
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'center',
   },
   menuLine: {
-    width: 22,
+    width: 20,
     height: 1.5,
     backgroundColor: colors.text,
     marginVertical: 2.5,
     opacity: 0.85,
     borderRadius: 1,
   },
-  brandText: { flex: 1, textAlign: 'center' },
+  profileDot: {
+    width: 8, height: 8, borderRadius: 4,
+    borderWidth: 1, borderColor: colors.text,
+  },
+  profileArc: {
+    width: 18, height: 9,
+    borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1,
+    borderColor: colors.text,
+    borderTopLeftRadius: 9, borderTopRightRadius: 9,
+    marginTop: 3,
+  },
+  brand: {
+    color: colors.text,
+    fontSize: 13,
+    letterSpacing: 4,
+    fontWeight: '300',
+    flex: 1,
+    textAlign: 'center',
+  },
+
   tapLabel: {
     textAlign: 'center',
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
     marginBottom: spacing.lg,
+    fontSize: 11,
+    letterSpacing: 2.5,
   },
-  scrollContent: {
-    paddingBottom: 60,
-    alignItems: 'center',
+
+  scroll: {
+    paddingBottom: spacing.xxl,
   },
+
   timeline: {
-    position: 'absolute',
-    left: SCREEN_W / 2 - 1,
-    top: 0,
+    position: 'relative',
+    width: '100%',
+    paddingTop: spacing.sm,
   },
+  timelineLine: {
+    position: 'absolute',
+    left: '50%',
+    marginLeft: -0.5,
+    top: 0,
+    bottom: 0,
+    width: 1,
+    backgroundColor: 'rgba(157,78,221,0.2)',
+  },
+
   nodeRow: {
     width: '100%',
-    minHeight: 130,
-    justifyContent: 'center',
+    height: 110,
     position: 'relative',
+    justifyContent: 'center',
   },
-  dot: {
+  connectorDot: {
     position: 'absolute',
+    left: '50%',
     top: '50%',
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    marginLeft: -4,
+    marginTop: -4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(157, 78, 221, 0.5)',
+    borderColor: 'rgba(157,78,221,0.6)',
     backgroundColor: colors.bg,
-    marginTop: -5,
   },
-  dotRight: { left: SCREEN_W / 2 - 5 },
-  dotLeft: { left: SCREEN_W / 2 - 5 },
+  nodeWrap: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  nodeLeft: {
+    left: spacing.md,
+  },
+  nodeRight: {
+    right: spacing.md,
+  },
+
+  orbLabel: {
+    color: colors.text,
+    fontSize: 11,
+    textAlign: 'center',
+    paddingHorizontal: 6,
+  },
+
   bottomNodeWrap: {
     width: '100%',
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: spacing.md,
   },
-  bottomNode: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    borderWidth: 1.5,
-    borderColor: colors.accentBright,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.accentBright,
-    shadowOpacity: 0.7,
-    shadowRadius: 15,
-    elevation: 10,
-  },
-  bottomNodeInner: { width: 56, height: 56, position: 'relative' },
-  bottomDot: {
+  dotCluster: { width: 36, height: 36, position: 'relative' },
+  smallDot: {
     position: 'absolute',
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
     backgroundColor: colors.accentBright,
   },
+
   counter: {
     marginTop: spacing.xl,
     alignItems: 'center',
   },
+  counterLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+    letterSpacing: 0.5,
+  },
   counterNum: {
     color: colors.accentBright,
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '300',
     marginVertical: 4,
   },
