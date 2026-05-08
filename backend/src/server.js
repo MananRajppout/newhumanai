@@ -184,13 +184,18 @@ app.post('/api/exercises', async (req, res) => {
     return res.status(400).json({ error: 'user_id and trigger required' });
   }
 
+  // Soft validate UUID — if not a UUID, skip the onboarding fetch and use defaults
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user_id);
+
   try {
-    // Pull onboarding for personalization
-    const { rows } = await pool.query(
-      `SELECT triggers, inner_voice, best_self, loop_time, grounding FROM onboarding WHERE user_id = $1`,
-      [user_id]
-    );
-    const onb = rows[0] || {};
+    let onb = {};
+    if (isUuid) {
+      const { rows } = await pool.query(
+        `SELECT triggers, inner_voice, best_self, loop_time, grounding FROM onboarding WHERE user_id = $1`,
+        [user_id]
+      );
+      onb = rows[0] || {};
+    }
 
     const systemPrompt = `You are designing a 3-step somatic intervention for someone in the middle of a compulsive loop. They will see these exercises one at a time, full-screen, before a voice session begins.
 

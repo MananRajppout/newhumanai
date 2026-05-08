@@ -8,6 +8,7 @@ import {
   AudioSession,
   useTracks,
   useLocalParticipant,
+  AndroidAudioTypePresets,
 } from '@livekit/react-native';
 import { Track, RoomEvent } from 'livekit-client';
 import GlowOrb from '../src/components/GlowOrb';
@@ -58,8 +59,20 @@ export default function SessionScreen() {
           throw new Error('Microphone permission was not granted. Enable it in Settings → Apps → newhuman.ai → Permissions.');
         }
 
-        // 2. Start audio session (LiveKit needs this BEFORE connecting on Android)
+        // 2. Configure audio for MEDIA playback (speaker), not communication (earpiece).
+        // This is THE fix for "I can't hear the AI" — by default LiveKit uses
+        // communication mode which routes to the small earpiece at the top of the phone,
+        // making the agent's voice nearly inaudible.
         setPhase('connecting');
+        try {
+          await AudioSession.configureAudio({
+            android: {
+              audioTypeOptions: AndroidAudioTypePresets.media,
+            },
+          });
+        } catch (cfgErr) {
+          console.warn('AudioSession.configureAudio failed (non-fatal):', cfgErr?.message);
+        }
         await AudioSession.startAudioSession();
 
         // 3. Get a token from backend

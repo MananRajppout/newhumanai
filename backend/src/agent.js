@@ -73,9 +73,8 @@ export default defineAgent({
   },
 
   entry: async (ctx) => {
-    console.log(`[agent] joining room ${ctx.room.name}`);
-
     await ctx.connect();
+    console.log(`[agent] joined room ${ctx.room.name}`);
 
     const participant = await ctx.waitForParticipant();
     console.log(`[agent] participant joined: ${participant.identity}`);
